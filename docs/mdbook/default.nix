@@ -4,7 +4,6 @@
   evaledModules,
   nixosOptionsDoc,
   transformOptions,
-  hmOptions,
   search,
 }:
 let
@@ -206,10 +205,10 @@ let
   };
 
   mdbook = {
-    nixvimOptions = mapModulesToString (
+    nixvimOptionsSummary = mapModulesToString (
       name: opts:
       let
-        isBranch = if name == "index" then true else opts.hasComponents && opts.index.options != { };
+        isBranch = name == "index" || (opts.hasComponents && opts.index.options != { });
 
         path =
           if isBranch then
@@ -219,36 +218,62 @@ let
           else
             "";
 
-        indentLevel = with builtins; length (filter isString (split "/" opts.index.path)) - 1;
+        indentLevel = lib.count (c: c == "/") (lib.stringToCharacters opts.index.path);
 
-        padding = lib.concatStrings (builtins.genList (_: "\t") indentLevel);
+        padding = lib.strings.replicate indentLevel "\t";
       in
       "${padding}- [${name}](${path})"
     ) docs.modules;
+
+    # A list of platform-specific docs
+    # [ { name, file, path, configuration } ]
+    wrapperOptions =
+      builtins.map
+        (filename: rec {
+          # Eval a configuration for the platform's module
+          configuration = lib.evalModules {
+            modules = [
+              ../../wrappers/modules/${filename}.nix
+              {
+                # Ignore definitions for missing options
+                _module.check = false;
+              }
+            ];
+          };
+          # Also include display name, filepath, and rendered docs
+          inherit (configuration.config.meta.wrapper) name;
+          file = mkMDDoc (removeUnwanted configuration.options);
+          path = "./platforms/${filename}.md";
+        })
+        [
+          "nixos"
+          "hm"
+          "darwin"
+        ];
+
+    # Markdown summary for the table of contents
+    wrapperOptionsSummary = lib.foldl (
+      text: { name, path, ... }: text + "\n\t- [${name}](${path})"
+    ) "" mdbook.wrapperOptions;
+
+    # Attrset of { filePath = renderedDocs; }
+    wrapperOptionsFiles = lib.listToAttrs (
+      builtins.map (
+        { path, file, ... }:
+        {
+          name = path;
+          value = file;
+        }
+      ) mdbook.wrapperOptions
+    );
   };
-
-  prepareMD = ''
-    # Copy inputs into the build directory
-    cp -r --no-preserve=all $inputs/* ./
-    cp ${../../CONTRIBUTING.md} ./CONTRIBUTING.md
-    cp -r ${../user-guide} ./user-guide
-    cp -r ${../modules} ./modules
-
-    # Copy the generated MD docs into the build directory
-    # Using pkgs.writeShellScript helps to avoid the "bash: argument list too long" error
-    bash -e ${pkgs.writeShellScript "copy_docs" docs.commands}
-
-    # Prepare SUMMARY.md for mdBook
-    # Using pkgs.writeText helps to avoid the same error as above
-    substituteInPlace ./SUMMARY.md \
-      --replace-fail "@NIXVIM_OPTIONS@" "$(cat ${pkgs.writeText "nixvim-options-summary.md" mdbook.nixvimOptions})"
-
-    substituteInPlace ./modules/hm.md \
-      --replace-fail "@HM_OPTIONS@" "$(cat ${mkMDDoc hmOptions})"
-  '';
 in
-pkgs.stdenv.mkDerivation {
+
+pkgs.stdenv.mkDerivation (finalAttrs: {
   name = "nixvim-docs";
+
+  # Use structured attrs to avoid "bash: argument list too long" errors
+  __structuredAttrs = true;
 
   phases = [ "buildPhase" ];
 
@@ -256,19 +281,64 @@ pkgs.stdenv.mkDerivation {
     pkgs.mdbook
     pkgs.mdbook-alerts
   ];
-  inputs = lib.sourceFilesBySuffices ./. [
-    ".md"
-    ".toml"
-    ".js"
-  ];
+
+  # Build a source from the fileset containing the following paths,
+  # as well as all .md, .toml, & .js files in this directory
+  src = lib.fileset.toSource {
+    root = ../../.;
+    fileset = lib.fileset.unions [
+      ../user-guide
+      ../platforms
+      ../../CONTRIBUTING.md
+      (lib.fileset.fileFilter (
+        { type, hasExt, ... }:
+        type == "regular"
+        && lib.any hasExt [
+          "md"
+          "toml"
+          "js"
+        ]
+      ) ./.)
+    ];
+  };
 
   buildPhase = ''
     dest=$out/share/doc/nixvim
     mkdir -p $dest
-    ${prepareMD}
+
+    # Copy (and flatten) src into the build directory
+    cp -r --no-preserve=all $src/* ./
+    mv ./docs/* ./ && rmdir ./docs
+    mv ./mdbook/* ./ && rmdir ./mdbook
+
+    # Copy the generated MD docs into the build directory
+    bash -e ${finalAttrs.passthru.copy-docs}
+
+    # Copy the generated MD docs for the wrapper options
+    for path in "''${!wrapperOptionsFiles[@]}"
+    do
+      file="''${wrapperOptionsFiles[$path]}"
+      cp "$file" "$path"
+    done
+
+    # Patch SUMMARY.md - which defiens mdBook's table of contents
+    substituteInPlace ./SUMMARY.md \
+      --replace-fail "@PLATFORM_OPTIONS@" "$wrapperOptionsSummary" \
+      --replace-fail "@NIXVIM_OPTIONS@" "$nixvimOptionsSummary"
+
     mdbook build
     cp -r ./book/* $dest
     mkdir -p $dest/search
     cp -r ${search}/* $dest/search
   '';
-}
+
+  inherit (mdbook)
+    nixvimOptionsSummary
+    wrapperOptionsSummary
+    wrapperOptionsFiles
+    ;
+
+  passthru = {
+    copy-docs = pkgs.writeShellScript "copy-docs" docs.commands;
+  };
+})

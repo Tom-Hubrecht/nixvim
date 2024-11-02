@@ -26,13 +26,9 @@
 
     ./lsp
 
-    ./none-ls
-
     ./pluginmanagers/packer.nix
     ./pluginmanagers/lazy.nix
     ./pluginmanagers/lz-n.nix
-
-    ./utils/rest.nix
 
     ./deprecation.nix
   ];

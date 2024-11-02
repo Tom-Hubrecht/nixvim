@@ -24,13 +24,13 @@
 
       brokenTools =
         [
-          # Broken as of 2024-07-08
-          # TODO: re-enable this tests when fixed
-          "cpplint"
           # TODO: added 2024-09-13
           # Swift broken everywhere atm
           "swiftformat"
           "swiftlint"
+          # TODO: added 2024-10-15
+          # re-enable after fixed
+          "dmd"
         ]
         ++ lib.optionals (system == "aarch64-linux") [
           # Broken as of 2024-07-13
@@ -48,16 +48,14 @@
           # https://github.com/NixOS/nixpkgs/pull/331373
           # TODO: re-enable this test when fixed
           "dmd"
-          # As of 2024-01-04, luaformat is broken on x86_64-darwin
-          # TODO: re-enable this test when fixed
-          "lua_format"
         ];
 
+      # TODO: respect unpackaged from generated
       unpackaged =
         [
           "blade_formatter"
-          "cspell"
           "cljstyle"
+          "cspell"
           "dartanalyzer"
           "debride"
           "deno_fmt"
@@ -66,12 +64,15 @@
           "forge_fmt"
           "gersemi"
           "js_standard"
+          "markuplint"
+          "mix"
           "pint"
           "prettier_eslint"
           "prettier_standard"
           "redpen"
           "reek"
           "rome"
+          "ruff_sort"
           "slim_lint"
           "solhint"
           "sorbet"

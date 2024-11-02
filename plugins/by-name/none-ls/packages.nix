@@ -1,6 +1,6 @@
 lib:
 let
-  inherit (import ../../lib/pkg-lists.nix lib) topLevel scoped nullAttrs;
+  inherit (import ../../../lib/pkg-lists.nix lib) topLevel scoped nullAttrs;
 in
 {
   # builtin sources that don't require a package
@@ -49,6 +49,7 @@ in
       "fish"
       "fnlfmt"
       "fprettify"
+      "gersemi"
       "gitlint"
       "gofumpt"
       "golines"
@@ -246,7 +247,6 @@ in
       "findent"
       "forge_fmt"
       "gccdiag"
-      "gersemi"
       "markuplint"
       "mlint"
       "nginx_beautifier"

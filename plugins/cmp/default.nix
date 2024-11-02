@@ -1,18 +1,18 @@
 {
   lib,
-  helpers,
   ...
 }:
 let
-  cmpOptions = import ./options { inherit lib helpers; };
+  inherit (lib.nixvim) toLuaObject;
+
+  cmpOptions = import ./options { inherit lib; };
 in
-with lib;
-helpers.neovim-plugin.mkNeovimPlugin {
+lib.nixvim.neovim-plugin.mkNeovimPlugin {
   name = "cmp";
   originalName = "nvim-cmp";
   package = "nvim-cmp";
 
-  maintainers = [ maintainers.GaetanLepage ];
+  maintainers = [ lib.maintainers.GaetanLepage ];
 
   description = ''
     ### Completion Source Installation
@@ -73,17 +73,17 @@ helpers.neovim-plugin.mkNeovimPlugin {
     plugins.cmp.luaConfig.content =
       ''
         local cmp = require('cmp')
-        cmp.setup(${helpers.toLuaObject cfg.settings})
+        cmp.setup(${toLuaObject cfg.settings})
 
       ''
-      + (concatStringsSep "\n" (
-        mapAttrsToList (
-          filetype: settings: "cmp.setup.filetype('${filetype}', ${helpers.toLuaObject settings})\n"
+      + (lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (
+          filetype: settings: "cmp.setup.filetype('${filetype}', ${toLuaObject settings})\n"
         ) cfg.filetype
       ))
-      + (concatStringsSep "\n" (
-        mapAttrsToList (
-          cmdtype: settings: "cmp.setup.cmdline('${cmdtype}', ${helpers.toLuaObject settings})\n"
+      + (lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (
+          cmdtype: settings: "cmp.setup.cmdline('${cmdtype}', ${toLuaObject settings})\n"
         ) cfg.cmdline
       ));
   };

@@ -1,15 +1,16 @@
 {
   lib,
-  helpers,
   config,
   ...
 }:
-with lib;
 let
+  inherit (lib) mkRenamedOptionModule types;
+  inherit (lib.nixvim) defaultNullOpts;
+
   cfg = config.plugins.cmp-tabby;
 in
 {
-  meta.maintainers = [ maintainers.GaetanLepage ];
+  meta.maintainers = [ lib.maintainers.GaetanLepage ];
 
   # TODO: introduced 24-06-18, remove after 24.11
   imports =
@@ -31,23 +32,23 @@ in
     ];
 
   options.plugins.cmp-tabby = {
-    settings = helpers.mkSettingsOption {
+    settings = lib.nixvim.mkSettingsOption {
       description = "Options provided to the `require('cmp_ai.config'):setup` function.";
 
       options = {
-        host = helpers.defaultNullOpts.mkStr "http://localhost:5000" ''
+        host = defaultNullOpts.mkStr "http://localhost:5000" ''
           The address of the tabby host server.
         '';
 
-        max_lines = helpers.defaultNullOpts.mkUnsignedInt 100 ''
+        max_lines = defaultNullOpts.mkUnsignedInt 100 ''
           The max number of lines to complete.
         '';
 
-        run_on_every_keystroke = helpers.defaultNullOpts.mkBool true ''
+        run_on_every_keystroke = defaultNullOpts.mkBool true ''
           Whether to run the completion on every keystroke.
         '';
 
-        stop = helpers.defaultNullOpts.mkListOf types.str [ "\n" ] ''
+        stop = defaultNullOpts.mkListOf types.str [ "\n" ] ''
           Stop character.
         '';
       };
@@ -61,9 +62,9 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     extraConfigLua = ''
-      require('cmp_tabby.config'):setup(${helpers.toLuaObject cfg.settings})
+      require('cmp_tabby.config'):setup(${lib.nixvim.toLuaObject cfg.settings})
     '';
   };
 }
