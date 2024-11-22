@@ -37,7 +37,13 @@ let
     }:
     let
       disabled =
-        lib.optionals pkgs.stdenv.isDarwin [
+        [
+          # DEPRECATED SERVERS
+          # See https://github.com/neovim/nvim-lspconfig/blob/master/lua/lspconfig.lua
+          "ruff_lsp"
+          "bufls"
+        ]
+        ++ lib.optionals pkgs.stdenv.isDarwin [
           "fsautocomplete"
         ]
         ++ lib.optionals pkgs.stdenv.isAarch64 [

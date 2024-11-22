@@ -3,7 +3,6 @@
     "ada_ls"
     "agda_ls"
     "anakin_language_server"
-    "angularls"
     "antlersls"
     "apex_ls"
     "awk_ls"
@@ -17,6 +16,7 @@
     "bright_script"
     "bsl_ls"
     "buddy_ls"
+    "bufls"
     "bzl"
     "c3_lsp"
     "cadence"
@@ -92,6 +92,7 @@
     "msbuild_project_tools_server"
     "mutt_ls"
     "nelua_lsp"
+    "nextflow_ls"
     "nomad_lsp"
     "ntt"
     "nxls"
@@ -126,6 +127,7 @@
     "remark_ls"
     "rescriptls"
     "rnix"
+    "robotcode"
     "robotframework_ls"
     "roc_ls"
     "rome"
@@ -180,6 +182,7 @@
 
   packages = {
     aiken = "aiken";
+    angularls = "angular-language-server";
     ansiblels = "ansible-language-server";
     arduino_language_server = "arduino-language-server";
     asm_lsp = "asm-lsp";
@@ -194,7 +197,7 @@
     bitbake_language_server = "bitbake-language-server";
     blueprint_ls = "blueprint-compiler";
     buck2 = "buck2";
-    bufls = "buf-language-server";
+    buf_ls = "buf";
     ccls = "ccls";
     clangd = "clang-tools";
     clojure_lsp = "clojure-lsp";
